@@ -33,6 +33,9 @@
 #include "muse_board.h"
 #include "muse_chat.h"
 #include "muse_input.h"
+#if CONFIG_MUSE_JAM
+#include "muse_jam.h"
+#endif
 #include "muse_mem.h"
 #include "muse_settings.h"
 #include "muse_state.h"
@@ -832,6 +835,12 @@ static void voice_task(void *arg)
                 pre_reset();
             }
             /* The 20 ms read paces this loop. */
+#if CONFIG_MUSE_JAM
+            if (muse_jam_active()) {
+                muse_jam_audio_tick(s_chunk);   /* paces it the same, playing as it listens */
+                pre_reset();                    /* the jam isn't pre-roll for a note */
+            } else
+#endif
             idle_capture();
             if (xQueueReceive(s_queue, &ev, 0) != pdTRUE) {
                 continue;

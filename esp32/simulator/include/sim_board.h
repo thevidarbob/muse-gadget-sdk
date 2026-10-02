@@ -19,6 +19,13 @@
 #include "lvgl.h"
 #include "muse_board.h"
 
-/* The desktop board profile and the SDL display it creates. */
+/* The desktop board profile and the SDL display it creates: the SenseCAP
+ * Watcher's round 412 px screen, or "cores3" for the M5Stack CoreS3's
+ * 320x240 one. */
+bool sim_board_select(const char *name);
 const muse_board_t *sim_board_get(void);
+/* What the CoreS3 profile's accelerometer reads, in g: x right, y up. */
+void sim_board_set_tilt(float x, float y);
+/* A scripted touch at x, y in screen pixels, or its release. */
+void sim_board_touch(int x, int y, bool down);
 lv_display_t *sim_board_display(void);

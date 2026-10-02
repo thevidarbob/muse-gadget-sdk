@@ -31,9 +31,12 @@
 #include "lvgl.h"
 #include "src/drivers/sdl/lv_sdl_window.h"
 
+#include "muse_jam.h"
+#include "muse_jam_synth.h"
 #include "muse_state.h"
 #include "muse_ui.h"
 #include "sim_board.h"
+#include "sim_jam.h"
 #include "sim_platform.h"
 #include "sim_services.h"
 
@@ -56,8 +59,8 @@ static char s_ble_name[32] = "MuseGadget-SIM001";
 static void usage(FILE *out, const char *argv0)
 {
     fprintf(out,
-            "Usage: %s [--headless] [--scenario FILE] [--run-ms N] "
-            "[--screenshot FILE.ppm]\n"
+            "Usage: %s [--headless] [--board watcher|cores3] [--scenario FILE] "
+            "[--run-ms N] [--screenshot FILE.ppm] [--jam-wav FILE.wav]\n"
             "\n"
             "Scenario lines are key=value. Supported keys:\n"
             "  face=boot|idle|listening|thinking|speaking|error|off|happy\n"
@@ -68,6 +71,10 @@ static void usage(FILE *out, const char *argv0)
             "  ble=off|advertising|connected         passkey=0..999999\n"
             "  paired=true|false  link=boot|unpaired|pairing|confirm|connecting|online|offline|error\n"
             "  speaker=true|false brightness=10..100 advance=MILLISECONDS\n"
+            "  jam=play|beats|listen|off            jam_pattern=0..4 (and plays it)\n"
+            "  jam_preset=0..3    jam_pad=0..14|up  jam_play=true|false\n"
+            "  jam_chord=true|false                 tilt=X,Y (in g, CoreS3 board)\n"
+            "  touch=X,Y|up       (a finger down, moved, or lifted)\n"
             "\n"
             "Interactive keys: F1..F7 select face states, H is happy, Space is\n"
             "push-to-talk, +/- change level, [/] change progress, S sleeps,\n"
@@ -90,6 +97,7 @@ static void render_for(uint32_t duration_ms, bool real_time)
             step = FRAME_STEP_MS;
         }
         sim_time_advance_us((int64_t)step * 1000);
+        sim_jam_advance_ms(step);
         lv_timer_handler();
         if (real_time) {
             SDL_Delay(step);
@@ -361,6 +369,71 @@ static bool apply_setting(const char *key, const char *value, bool real_time)
         sim_services_set_brightness((int)number);
         return true;
     }
+    if (!strcmp(key, "jam")) {
+        static const char *const TABS[] = { "play", "beats", "listen" };
+        for (int i = 0; i < MUSE_JAM_TABS; i++) {
+            if (!strcmp(value, TABS[i])) {
+                muse_jam_ui_open(i);
+                return true;
+            }
+        }
+        if (!strcmp(value, "off")) {
+            muse_jam_ui_close();
+            return true;
+        }
+        return false;
+    }
+    if (!strncmp(key, "jam_", 4) && !muse_jam_active()) {
+        return false;   /* the engine is made when the jam first opens */
+    }
+    if (!strcmp(key, "jam_pattern") && parse_long(value, 0, JAM_PATTERNS - 1, &number)) {
+        jam_seq_pattern((int)number);
+        jam_seq_set_playing(true);
+        return true;
+    }
+    if (!strcmp(key, "jam_preset") && parse_long(value, 0, JAM_PRESETS - 1, &number)) {
+        jam_set_preset((int)number);
+        return true;
+    }
+    if (!strcmp(key, "jam_pad")) {
+        if (!strcmp(value, "up")) {
+            jam_pad_up();
+            return true;
+        }
+        if (parse_long(value, 0, JAM_PADS - 1, &number)) {
+            jam_pad_down((int)number);
+            return true;
+        }
+        return false;
+    }
+    if (!strcmp(key, "jam_play") && parse_bool(value, &flag)) {
+        jam_seq_set_playing(flag);
+        return true;
+    }
+    if (!strcmp(key, "jam_chord") && parse_bool(value, &flag)) {
+        jam_set_chord(flag);
+        return true;
+    }
+    if (!strcmp(key, "touch")) {
+        int x, y;
+        if (!strcmp(value, "up")) {
+            sim_board_touch(0, 0, false);
+            return true;
+        }
+        if (sscanf(value, "%d,%d", &x, &y) != 2 || x < 0 || y < 0 || x >= muse_board->width || y >= muse_board->height) {
+            return false;
+        }
+        sim_board_touch(x, y, true);
+        return true;
+    }
+    if (!strcmp(key, "tilt")) {
+        float x, y;
+        if (sscanf(value, "%f,%f", &x, &y) != 2 || x < -1.0f || x > 1.0f || y < -1.0f || y > 1.0f) {
+            return false;
+        }
+        sim_board_set_tilt(x, y);
+        return true;
+    }
     if (!strcmp(key, "advance") && parse_long(value, 0, 3600000, &number)) {
         render_for((uint32_t)number, real_time);
         return true;
@@ -471,15 +544,23 @@ int main(int argc, char **argv)
 {
     const char *scenario = NULL;
     const char *screenshot = NULL;
+    const char *jam_wav = NULL;
     uint32_t run_ms = 1000;
     bool headless = false;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--headless")) {
             headless = true;
+        } else if (!strcmp(argv[i], "--board") && i + 1 < argc) {
+            if (!sim_board_select(argv[++i])) {
+                fprintf(stderr, "unknown --board %s\n", argv[i]);
+                return 2;
+            }
         } else if (!strcmp(argv[i], "--scenario") && i + 1 < argc) {
             scenario = argv[++i];
         } else if (!strcmp(argv[i], "--screenshot") && i + 1 < argc) {
             screenshot = argv[++i];
+        } else if (!strcmp(argv[i], "--jam-wav") && i + 1 < argc) {
+            jam_wav = argv[++i];
         } else if (!strcmp(argv[i], "--run-ms") && i + 1 < argc) {
             long value;
             if (!parse_long(argv[++i], 0, 3600000, &value)) {
@@ -520,6 +601,10 @@ int main(int argc, char **argv)
     }
     SDL_AddEventWatch(event_watch, NULL);
     s_ready = true;
+    if (jam_wav && !sim_jam_record(jam_wav)) {
+        fprintf(stderr, "cannot write %s\n", jam_wav);
+        return 1;
+    }
 
     if (scenario && !run_scenario(scenario, !headless)) {
         return 2;
@@ -535,6 +620,7 @@ int main(int argc, char **argv)
         }
     }
 
+    sim_jam_finish();
     SDL_DelEventWatch(event_watch, NULL);
     lv_deinit();
     return 0;

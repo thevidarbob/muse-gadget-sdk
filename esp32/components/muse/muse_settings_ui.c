@@ -418,6 +418,23 @@ static int text_y(int y)
     return muse_board->height / 2 + text_px(y - 233);
 }
 
+/* A short rectangular screen (the CoreS3's 320x240): the 466 px layout would
+ * put the field above the top edge, so the back arrow goes in the corner, the
+ * title beside it, the field under them and the keys below that. */
+#define SHORT_ROW_H 36
+#define SHORT_FIELD_Y 42
+#define SHORT_KB_Y (SHORT_FIELD_Y + SHORT_ROW_H + 6)
+
+static bool text_short(void)
+{
+    return !muse_board->round && muse_board->height < 466;
+}
+
+static int field_y(void)
+{
+    return text_short() ? SHORT_FIELD_Y : text_y(76);
+}
+
 static void close_text(void)
 {
     lv_textarea_set_text(s_text_ta, "");   /* don't leave secrets in the widget */
@@ -456,10 +473,10 @@ static void on_text_show(lv_event_t *e)
 /* Beside the keyboard's field, a button to show a password. */
 static void fit_show_button(bool password)
 {
-    int w = text_px(300), show_w = 70, gap = 8;
+    int w = text_short() ? muse_board->width - 16 : text_px(300), show_w = 70, gap = 8;
     lv_obj_set_width(s_text_ta, password ? w - show_w - gap : w);
-    lv_obj_align(s_text_ta, LV_ALIGN_TOP_MID, password ? -(show_w + gap) / 2 : 0, text_y(76));
-    lv_obj_align(s_text_show, LV_ALIGN_TOP_MID, (w - show_w) / 2, text_y(76));
+    lv_obj_align(s_text_ta, LV_ALIGN_TOP_MID, password ? -(show_w + gap) / 2 : 0, field_y());
+    lv_obj_align(s_text_show, LV_ALIGN_TOP_MID, (w - show_w) / 2, field_y());
     lv_label_set_text(lv_obj_get_child(s_text_show, 0), "Show");
     if (password) {
         lv_obj_remove_flag(s_text_show, LV_OBJ_FLAG_HIDDEN);
@@ -472,7 +489,7 @@ static void build_keyboard(void)
 {
     s_text_show = lv_button_create(s_text);
     lv_obj_remove_style_all(s_text_show);
-    lv_obj_set_size(s_text_show, 70, text_px(48));
+    lv_obj_set_size(s_text_show, 70, text_short() ? SHORT_ROW_H : text_px(48));
     lv_obj_set_style_radius(s_text_show, 14, 0);
     lv_obj_set_style_bg_opa(s_text_show, LV_OPA_COVER, 0);
     lv_obj_set_style_bg_color(s_text_show, lv_color_hex(COLOR_CARD), 0);
@@ -481,13 +498,13 @@ static void build_keyboard(void)
 
     /* Inside the circle, or across the rest of the screen. */
     s_text_kb = lv_keyboard_create(s_text);
-    int y = text_y(136);
+    int y = text_short() ? SHORT_KB_Y : text_y(136);
     if (muse_board->round) {
         lv_obj_set_size(s_text_kb, text_px(384), text_px(206));
     } else {
         int w = muse_board->width - 16;
-        int h = muse_board->height - y - 8;
-        lv_obj_set_size(s_text_kb, w, LV_MIN(h, w * 206 / 384));
+        int h = muse_board->height - y - (text_short() ? 2 : 8);
+        lv_obj_set_size(s_text_kb, w, text_short() ? h : LV_MIN(h, w * 206 / 384));
     }
     lv_obj_align(s_text_kb, LV_ALIGN_TOP_MID, 0, y);
     lv_obj_set_style_bg_opa(s_text_kb, LV_OPA_TRANSP, 0);
@@ -522,7 +539,7 @@ static void build_text_page(lv_obj_t *tile)
     lv_obj_align(s_text_title, LV_ALIGN_TOP_MID, 0, 40);
 
     const lv_font_t *font = &lv_font_montserrat_20;
-    int h = text_px(48), border = 2;
+    int h = text_short() ? SHORT_ROW_H : text_px(48), border = 2;
     int pad = (h - 2 * border - lv_font_get_line_height(font)) / 2;
     s_text_ta = lv_textarea_create(s_text);
     lv_textarea_set_one_line(s_text_ta, true);
@@ -538,10 +555,16 @@ static void build_text_page(lv_obj_t *tile)
     lv_obj_set_style_text_font(s_text_ta, &lv_font_montserrat_16, LV_PART_TEXTAREA_PLACEHOLDER);
     lv_obj_set_style_text_color(s_text_ta, lv_color_hex(COLOR_DIM), LV_PART_TEXTAREA_PLACEHOLDER);
     lv_obj_add_state(s_text_ta, LV_STATE_FOCUSED);
-    lv_obj_align(s_text_ta, LV_ALIGN_TOP_MID, 0, text_y(76));
+    lv_obj_align(s_text_ta, LV_ALIGN_TOP_MID, 0, field_y());
 
     /* A full keyboard's keys are too small to hit on a screen under 2". */
     if (muse_board->diagonal_in >= 2.0f) {
+        if (text_short()) {
+            lv_obj_set_size(back, 48, SHORT_ROW_H);
+            lv_obj_align(back, LV_ALIGN_TOP_LEFT, 2, 2);
+            lv_obj_set_width(s_text_title, muse_board->width - 112);
+            lv_obj_align(s_text_title, LV_ALIGN_TOP_MID, 0, 10);
+        }
         build_keyboard();
         return;
     }

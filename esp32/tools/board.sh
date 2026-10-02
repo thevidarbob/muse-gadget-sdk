@@ -26,12 +26,14 @@
 #              Home Assistant Voice PE (ESP32-S3), push-to-talk voice chat
 #   reterminal-e1001
 #              Seeed reTerminal E1001 (ESP32-S3) with a 7.5 inch e-paper
+#   muse-m5stack-cores3
+#              M5Stack CoreS3 (ESP32-S3) with Muse's full UI and Muse Jam
 #
 # The action defaults to build. Without PORT, flash and monitor use the only
 # matching serial port, if there is exactly one.
 set -euo pipefail
 
-usage() { sed -n '16,31p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '16,33p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
 [ $# -ge 1 ] || usage 2
 case "$1" in -h|--help) usage ;; esac
@@ -64,6 +66,13 @@ case "$BOARD" in
     DEFAULTS="$DEFAULTS;devices/sdkconfig.home-assistant-voice"
     # The S3's own USB-Serial-JTAG, which looks like a DevKitC-1's; check
     # which board is on the port before flashing.
+    PORTS="/dev/cu.usbmodem* /dev/ttyACM*"
+    ;;
+  muse-m5stack-cores3)
+    # The same build as tools/muse/board.sh build cores3, in the same directory.
+    TARGET=esp32s3
+    DEFAULTS="$DEFAULTS;devices/sdkconfig.muse;devices/sdkconfig.${BOARD}"
+    MUSE=1
     PORTS="/dev/cu.usbmodem* /dev/ttyACM*"
     ;;
   *) echo "error: unknown board '$BOARD'" >&2; usage 2 ;;
@@ -106,8 +115,20 @@ fi
 
 BUILD_DIR="$PROJECT/build-$BOARD"
 cd "$PROJECT"
-exec idf.py -B "$BUILD_DIR" \
-  -DIDF_TARGET="$TARGET" \
-  -DSDKCONFIG="$BUILD_DIR/sdkconfig" \
-  -DSDKCONFIG_DEFAULTS="$DEFAULTS" \
-  ${PORT_ARGS[@]+"${PORT_ARGS[@]}"} "${IDF_ACTIONS[@]}"
+IDF=(idf.py -B "$BUILD_DIR"
+  -DIDF_TARGET="$TARGET"
+  -DSDKCONFIG="$BUILD_DIR/sdkconfig"
+  -DSDKCONFIG_DEFAULTS="$DEFAULTS"
+  ${PORT_ARGS[@]+"${PORT_ARGS[@]}"} "${IDF_ACTIONS[@]}")
+if [ -z "${MUSE:-}" ] || [ "$ACTION" = monitor ]; then
+  exec "${IDF[@]}"
+fi
+# A Muse build resolves different managed components (LVGL) from the others,
+# which share managed_components/: start clean and leave nothing behind, as
+# tools/muse/board.sh does.
+clean() { for _ in 1 2 3; do rm -rf managed_components dependencies.lock 2>/dev/null && return; sleep 1; done; }
+clean
+rc=0
+"${IDF[@]}" || rc=$?
+clean
+exit $rc

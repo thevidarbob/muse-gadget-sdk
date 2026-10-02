@@ -39,23 +39,25 @@ session to Muse. The rest depends on the hardware.
 | **Waveshare ESP32-C6-Touch-AMOLED-1.8** | ESP32-C6 | 1.8" 368×448 AMOLED, touch | 16 MB / none | [Waveshare wiki](https://www.waveshare.com/wiki/ESP32-C6-Touch-AMOLED-1.8) | [Waveshare](https://www.waveshare.com/esp32-c6-touch-amoled-1.8.htm) |
 | **Seeed SenseCAP Watcher** | ESP32-S3 | 1.45" 412×412 round LCD, touch | 32 MB / 8 MB | [Seeed wiki](https://wiki.seeedstudio.com/watcher/), [GitHub](https://github.com/Seeed-Studio/SenseCAP-Watcher-Firmware) | [Seeed Studio](https://www.seeedstudio.com/SenseCAP-Watcher-W1-A-p-5979.html) |
 | **M5Stack StickS3** | ESP32-S3 | 1.14" 135×240 LCD | 8 MB / 8 MB | [M5Stack docs](https://docs.m5stack.com/en/core/StickS3), [M5Unified](https://github.com/m5stack/M5Unified) | [M5Stack](https://shop.m5stack.com/products/m5sticks3-esp32s3-mini-iot-dev-kit) |
+| **M5Stack CoreS3** | ESP32-S3 | 2" 320×240 LCD, touch | 16 MB / 8 MB | [M5Unified](https://github.com/m5stack/M5Unified) | — |
 | **M5Stack StickC Plus2** | ESP32 | 1.14" 135×240 LCD | 8 MB / 2 MB | [M5Stack docs](https://docs.m5stack.com/en/core/M5StickC%20PLUS2), [M5Unified](https://github.com/m5stack/M5Unified) | [M5Stack](https://shop.m5stack.com/products/m5stickc-plus2-esp32-mini-iot-development-kit) (end of life) |
 
 ## Features
 
-| | DevKitC-1 | ideaspark | SenseCAP Indicator | reTerminal E1001 | HA Voice PE | Waveshare S3 1.75C | AIPI Lite | Waveshare C6 1.8 | Watcher | StickS3 | StickC Plus2 |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| Home-network tunnel | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ |
-| Shows status on | Light | Screen | Screen | E-paper | Light ring | Avatar | Avatar | Avatar | Avatar | Avatar | Avatar |
-| Images from Muse | — | ✅ | ✅ | Black and white | — | ✅ | ✅ | — | ✅ | ✅ | ✅ |
-| UI and settings | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Push-to-talk | — | — | — | — | ✅ | ✅ | ✅ | Text replies | ✅ | ✅ | ✅ |
-| Speaker and mic | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Buzzer and mic |
-| Air sensors | — | — | D1S, D1Pro | — | — | — | — | — | — | — | — |
-| Touch | — | — | — | — | — | ✅ | — | ✅ | ✅ | — | — |
-| Battery status | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | Voltage only |
-| Over-the-air updates | Off | Off | Off | Off | Off | On | On | On | On | On | On |
-| Buttons | BOOT | BOOT | Top | Green | Centre (talk), dial | PWR (talk), BOOT | Two | BOOT (talk), PWR | Wheel (press to talk, turn to sleep) | Front (talk), side (menu), PWR | Front (talk), side (menu), PWR |
+| | DevKitC-1 | ideaspark | SenseCAP Indicator | reTerminal E1001 | HA Voice PE | Waveshare S3 1.75C | AIPI Lite | Waveshare C6 1.8 | Watcher | StickS3 | CoreS3 | StickC Plus2 |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| Home-network tunnel | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ |
+| Shows status on | Light | Screen | Screen | E-paper | Light ring | Avatar | Avatar | Avatar | Avatar | Avatar | Avatar | Avatar |
+| Images from Muse | — | ✅ | ✅ | Black and white | — | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ |
+| UI and settings | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Push-to-talk | — | — | — | — | ✅ | ✅ | ✅ | Text replies | ✅ | ✅ | ✅ | ✅ |
+| Speaker and mic | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Buzzer and mic |
+| Muse Jam (music) | — | — | — | — | — | — | — | — | — | — | ✅ | — |
+| Air sensors | — | — | D1S, D1Pro | — | — | — | — | — | — | — | — | — |
+| Touch | — | — | — | — | — | ✅ | — | ✅ | ✅ | — | ✅ | — |
+| Battery status | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Voltage only |
+| Over-the-air updates | Off | Off | Off | Off | Off | On | On | On | On | On | On | On |
+| Buttons | BOOT | BOOT | Top | Green | Centre (talk), dial | PWR (talk), BOOT | Two | BOOT (talk), PWR | Wheel (press to talk, turn to sleep) | Front (talk), side (menu), PWR | PWR (talk), RST | Front (talk), side (menu), PWR |
 
 Boards without PSRAM (the ideaspark and the Waveshare C6) don't have room for
 the home-network tunnel. Muse can still reach and control them once the
@@ -137,6 +139,30 @@ back to UiFlow2, write the backup:
 python -m esptool --chip esp32s3 -p PORT write-flash 0 sticks3.bin
 ```
 
+The M5Stack CoreS3 is the biggest of the rectangles, so Muse's face gets a
+wide layout: Muse in the middle, the status along the top and the captions
+along the bottom, with a bar across the bottom edge in place of the ring. The
+power key is push-to-talk (the power chip sees it, so Muse polls it), and
+holding it for 10 s still forces the power off. The display is an ILI9342C,
+which Muse drives with the ST7789 command set and the panel's own power-on
+defaults. The camera, proximity sensor, magnetometer and microSD slot aren't
+used yet. The BMI270 accelerometer is, by Muse Jam.
+
+Muse Jam is the ♪ button on the CoreS3's face. PLAY is fifteen pads locked to
+a scale (minor pentatonic in A to start, so nothing sounds wrong) in four
+voices: PLUCK, a plucked string; NEON, a detuned saw pad; GLASS, an FM bell;
+CHIP, a square-wave lead. CHORD turns each pad into a triad and ECHO adds a
+delay timed to the beat. Slide a finger across the pads to strum or glide, and
+tilt the CoreS3 left or right to bend the pitch, or towards or away from you
+to open or close the filter. BEATS is a 16 step drum machine (kick, snare,
+hat, clap and a bass line that follows the last pad you played) with four
+patterns and an empty grid, tempo, swing, and the row names as finger drums.
+Shake the CoreS3 to remix the beat. LISTEN draws what the mics hear as a
+spectrum and finds the tempo of the music in the room; SYNC starts the beat
+machine at that tempo, on the beat. A press of the power key ends the jam and
+listens as usual. The engine is in `components/muse/muse_jam_synth.c`, plain C
+that the simulator also runs.
+
 The M5Stack StickC Plus2 is the only board with the full UI on a classic ESP32. It has
 8 MB of flash and 2 MB of PSRAM, so it uses the 8 MB partition table too. The
 front button is push-to-talk and the side button steps through the menu. The
@@ -180,6 +206,7 @@ board's overlays, in order:
 | Waveshare C6 1.8 | `esp32c6` | [`devices/sdkconfig.muse`](sdkconfig.muse), [`devices/sdkconfig.muse-waveshare-c6-18`](sdkconfig.muse-waveshare-c6-18) | by hand |
 | SenseCAP Watcher | `esp32s3` | [`devices/sdkconfig.muse`](sdkconfig.muse), [`devices/sdkconfig.muse-sensecap-watcher`](sdkconfig.muse-sensecap-watcher) | by hand |
 | M5Stack StickS3 | `esp32s3` | [`devices/sdkconfig.muse`](sdkconfig.muse), [`devices/sdkconfig.muse-m5stack-sticks3`](sdkconfig.muse-m5stack-sticks3) | by hand |
+| M5Stack CoreS3 | `esp32s3` | [`devices/sdkconfig.muse`](sdkconfig.muse), [`devices/sdkconfig.muse-m5stack-cores3`](sdkconfig.muse-m5stack-cores3) | `tools/board.sh muse-m5stack-cores3 build` |
 | M5Stack StickC Plus2 | `esp32` | [`devices/sdkconfig.muse`](sdkconfig.muse), [`devices/sdkconfig.muse-m5stack-stickc-plus2`](sdkconfig.muse-m5stack-stickc-plus2) | by hand |
 
 `tools/board.sh BOARD [build|flash|monitor|flash-monitor] [PORT]` builds each

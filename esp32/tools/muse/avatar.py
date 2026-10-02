@@ -64,8 +64,9 @@ BOARDS = {
     "Seeed SenseCAP Watcher": "watcher",
     "M5Stack StickS3": "sticks3",
     "M5Stack StickC Plus2": "plus2",
+    "M5Stack CoreS3": "cores3",
 }
-CHAT_BOARDS = ("s3", "aipi", "sticks3", "watcher")
+CHAT_BOARDS = ("s3", "aipi", "sticks3", "cores3", "watcher")
 
 
 class Stop(Exception):

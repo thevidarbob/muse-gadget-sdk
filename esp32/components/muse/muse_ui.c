@@ -46,6 +46,9 @@
 #if CONFIG_MUSE_WATCHER_CAMERA
 #include "boards/watcher_camera.h"
 #endif
+#if CONFIG_MUSE_JAM
+#include "muse_jam.h"
+#endif
 
 static const char *TAG = "muse_ui";
 
@@ -86,8 +89,10 @@ static const char *TAG = "muse_ui";
 static int s_w, s_h;
 static bool s_small;
 static bool s_tall;         /* compact, with room above and below Muse (StickS3) */
+static bool s_wide;         /* full, on a short landscape rectangle (CoreS3): no ring, labels at the edges */
 static int s_canvas_px;     /* Muse's size on screen */
 static int s_dy;            /* full layout: offset from a 466 px tall screen */
+static int s_top;           /* full layout: the status line's top */
 static lv_indev_t *s_indev;
 static lv_obj_t *s_tv;
 static lv_obj_t *s_face;
@@ -104,6 +109,7 @@ static lv_obj_t *s_canvas;
 static lv_obj_t *s_mic_icon;
 static lv_obj_t *s_ring;
 static lv_obj_t *s_bar;     /* compact layout's stand-in for the ring */
+static lv_obj_t *s_jam_btn; /* Muse Jam, opposite the speaker; only while idle */
 static lv_obj_t *s_state_lbl;
 static lv_obj_t *s_name_lbl;    /* this gadget's own name, to tell it from the next one */
 static lv_obj_t *s_power_lbl;
@@ -588,7 +594,7 @@ static void set_answer(int which)
             lv_obj_add_flag(l->hides[i], LV_OBJ_FLAG_HIDDEN);
         }
     }
-    if (!muse_board->round) {
+    if (s_ring && !muse_board->round) {
         lv_obj_set_flag(s_ring, LV_OBJ_FLAG_HIDDEN, l != NULL);   /* the reply runs past a rectangle's ring */
     }
     if (l) {
@@ -690,7 +696,7 @@ static void build_answer(lv_obj_t *face, int ring_in)
     }
 
     l = &s_answers[ANSWER_READ];
-    int status_bottom = 20 + s_dy + 16 - s_h / 2;
+    int status_bottom = s_top + (s_wide ? 40 : 16) - s_h / 2;   /* a wide screen's state is beside it */
     l->px = MUSE_PX_W * MINI_CELL_PX;
     l->y = status_bottom + 2 + l->px / 2;   /* its sparkles clear of the status line */
     l->align = LV_TEXT_ALIGN_LEFT;
@@ -721,6 +727,12 @@ static void build_answer(lv_obj_t *face, int ring_in)
     if (muse_board->touch) {
         build_speaker(face, spk_x, spk_y);
     }
+#if CONFIG_MUSE_JAM
+    /* On a wide screen across from the speaker, under the status icons; on
+     * a round one under the speaker, clear of the talk button's icon. */
+    s_jam_btn = muse_jam_ui_add_button(face, s_wide ? s_w / 2 - 8 - 26 : spk_x - 6,
+                                       s_wide ? -s_h / 2 + 26 + 26 : spk_y + 74);
+#endif
 
     /* Out of the way while a page is up: the mode name, where Muse was. */
     lv_obj_update_layout(face);
@@ -790,7 +802,7 @@ static void build_screen(void)
         face = s_face;
     }
 
-    if (!s_small) {
+    if (!s_small && !s_wide) {
         /* Progress ring around the bezel. */
         int d = (s_w < s_h ? s_w : s_h) - 8;
         s_ring = lv_arc_create(face);
@@ -817,7 +829,9 @@ static void build_screen(void)
     int ring_in = (s_w < s_h ? s_w : s_h) / 2 - 10;   /* the ring's inner edge */
     int cap_h = 2 * lv_font_get_line_height(&lv_font_unscii_16) + CAPTION_LINE_SPACE;
     int cap_bottom = 179;                              /* a 466 px circle's; fine for rectangles */
-    if (muse_board->round) {
+    if (s_wide) {
+        cap_bottom = s_h / 2 - 14;                     /* above the page dots */
+    } else if (muse_board->round) {
         cap_bottom = (int)sqrtf((float)(ring_in * ring_in - CAPTION_W * CAPTION_W / 4)) - 3;
     }
     int cap_top = cap_bottom - cap_h;
@@ -847,7 +861,11 @@ static void build_screen(void)
     lv_obj_set_flex_flow(status, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(status, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(status, s_small ? 4 : 8, 0);
-    lv_obj_align(status, LV_ALIGN_TOP_MID, 0, s_small ? 1 : 20 + s_dy);
+    if (s_wide) {
+        lv_obj_align(status, LV_ALIGN_TOP_RIGHT, -6, s_top);
+    } else {
+        lv_obj_align(status, LV_ALIGN_TOP_MID, 0, s_small ? 1 : s_top);
+    }
     s_wifi_icon = make_label(status, &lv_font_montserrat_14, COLOR_DIM);
     s_ble_icon = make_label(status, &lv_font_montserrat_14, COLOR_DIM);
     s_power_lbl = make_label(status, &lv_font_unscii_8, COLOR_DIM);
@@ -855,16 +873,16 @@ static void build_screen(void)
     /* The compact layout leaves the state to the avatar and the caption,
      * unless the screen is tall enough to fit it in small type above Muse. */
     s_state_lbl = make_label(face, s_small ? &lv_font_unscii_8 : &lv_font_unscii_16, 0xffffff);
-    lv_obj_set_style_text_letter_space(s_state_lbl, s_small ? 1 : 2, 0);
-    lv_obj_align(s_state_lbl, LV_ALIGN_TOP_MID, 0, s_small ? 22 : 40 + s_dy);
+    lv_obj_set_style_text_letter_space(s_state_lbl, s_small || s_wide ? 1 : 2, 0);
+    lv_obj_align(s_state_lbl, LV_ALIGN_TOP_MID, 0, s_small ? 22 : s_wide ? s_top : s_top + 20);
     lv_obj_set_flag(s_state_lbl, LV_OBJ_FLAG_HIDDEN, s_small && !s_tall);
 
     /* This gadget's own name, dim under the state while it's unpaired: with
      * more than one on the bench, the screen says which one to pick in the
      * Muse app. update_chrome() fills it in, shortens it to the hex tail on a
      * screen too narrow for the whole thing, and empties it once paired. */
-    s_name_lbl = make_label(face, s_small ? &lv_font_unscii_8 : &lv_font_unscii_16, COLOR_DIM);
-    lv_obj_align(s_name_lbl, LV_ALIGN_TOP_MID, 0, s_small ? 32 : 60 + s_dy);
+    s_name_lbl = make_label(face, s_small || s_wide ? &lv_font_unscii_8 : &lv_font_unscii_16, COLOR_DIM);
+    lv_obj_align(s_name_lbl, LV_ALIGN_TOP_MID, 0, s_small ? 32 : s_wide ? s_top + 20 : s_top + 40);
     /* Same rule as the state label: a square 128 px screen centres Muse over
      * these rows, so there's nowhere to put this without covering the face. */
     lv_obj_set_flag(s_name_lbl, LV_OBJ_FLAG_HIDDEN, s_small && !s_tall);
@@ -887,6 +905,14 @@ static void build_screen(void)
         lv_obj_set_style_bg_opa(s_bar, LV_OPA_COVER, 0);
         lv_obj_align(s_bar, LV_ALIGN_BOTTOM_LEFT, 0, 0);
         return;
+    }
+    if (s_wide) {
+        /* No room for a ring around Muse: the compact layout's bar stands in. */
+        s_bar = lv_obj_create(face);
+        lv_obj_remove_style_all(s_bar);
+        lv_obj_set_size(s_bar, 0, 3);
+        lv_obj_set_style_bg_opa(s_bar, LV_OPA_COVER, 0);
+        lv_obj_align(s_bar, LV_ALIGN_BOTTOM_LEFT, 0, 0);
     }
     /* Fixed height: a longer caption ends in dots rather than growing into the ring. */
     lv_obj_set_size(s_caption_lbl, CAPTION_W, cap_h);
@@ -1002,7 +1028,7 @@ static void build_overlays(void)
         lv_obj_set_style_bg_opa(d, LV_OPA_COVER, 0);
         lv_obj_set_style_bg_color(d, lv_color_hex(COLOR_DOT_OFF), 0);
         lv_obj_remove_flag(d, LV_OBJ_FLAG_CLICKABLE);
-        lv_obj_align(d, LV_ALIGN_BOTTOM_MID, i ? 8 : -8, -14);
+        lv_obj_align(d, LV_ALIGN_BOTTOM_MID, i ? 8 : -8, s_wide ? -5 : -14);
         s_dots[i] = d;
     }
 
@@ -1278,8 +1304,8 @@ static void update_power(float now)
     muse_power_t p = muse_state_power();
     char buf[32];
     if (p.battery_pct < 0) {
-        strlcpy(buf, p.usb ? (s_small ? "USB" : "USB POWER") : "", sizeof(buf));
-    } else if (s_small) {
+        strlcpy(buf, p.usb ? (s_small || s_wide ? "USB" : "USB POWER") : "", sizeof(buf));
+    } else if (s_small || s_wide) {   /* a wide screen's status shares the top line */
         snprintf(buf, sizeof(buf), "%s%d%%", p.charging ? "+" : "", p.battery_pct);
     } else if (p.charging) {
         snprintf(buf, sizeof(buf), "CHARGING %d%%", p.battery_pct);
@@ -1308,6 +1334,9 @@ static void update_status(muse_mode_t mode, float now)
             lv_obj_set_style_bg_color(s_bar, lv_color_hex(accent), 0);
         }
         set_mic_color(mode == MUSE_MODE_LISTENING ? accent : COLOR_DIM);   /* lights up while recording */
+        if (s_jam_btn) {
+            lv_obj_set_flag(s_jam_btn, LV_OBJ_FLAG_HIDDEN, mode != MUSE_MODE_IDLE);
+        }
         s_shown_state = (int)mode;
         s_shown_lit = -1;
     }
@@ -1450,9 +1479,19 @@ static void frame_tick(lv_timer_t *timer)
         }
         s_last_mode = mode;
     }
+#if CONFIG_MUSE_JAM
+    if (muse_jam_ui_is_open() && (mode != MUSE_MODE_IDLE || muse_state_asleep())) {
+        muse_jam_ui_close();   /* a talk press, a reply, or sleep ends the jam */
+    }
+#endif
     if (update_sleep()) {
         return;
     }
+#if CONFIG_MUSE_JAM
+    if (muse_jam_ui_is_open()) {
+        return;   /* it covers the face and runs on a timer of its own */
+    }
+#endif
     update_chrome(now);
     if (muse_menu_tick(now)) {
         image_hide_locked();
@@ -1496,7 +1535,13 @@ esp_err_t muse_ui_start(void)
     if (s_canvas_px > s_w) {
         s_canvas_px = s_w / MUSE_PX_W * MUSE_PX_W;
     }
-    s_dy = (s_h - 466) / 2;
+    /* A short landscape rectangle has no ring to fit inside; Muse a size
+     * down leaves a line for the status above and the captions below. */
+    s_wide = !s_small && !muse_board->round && s_h < 300 && s_w > s_h;
+    if (s_wide) {
+        s_canvas_px = MUSE_PX_W * 3;
+    }
+    s_dy = s_wide ? 0 : (s_h - 466) / 2;
     if (!s_small && muse_board->round && s_dy < 0) {
         /* A shorter screen moves the labels out towards its edges, but a
          * smaller circle's edges curve away from them. Keep them where they
@@ -1504,6 +1549,7 @@ esp_err_t muse_ui_start(void)
         s_canvas_px = (MUSE_PX_W * 5 + 2 * s_dy) / MUSE_PX_W * MUSE_PX_W;
         s_dy = 0;
     }
+    s_top = s_wide ? 4 : 20 + s_dy;
 
     lv_display_t *disp = muse_board->display_start(&s_indev);
     if (!disp) {

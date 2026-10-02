@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # Build or flash Home Link for one board:
-#   tools/muse/board.sh build|flash <s3|aipi|c6|watcher|sticks3|plus2> [serial|port]
+#   tools/muse/board.sh build|flash <s3|aipi|c6|watcher|sticks3|plus2|cores3> [serial|port]
 # Build log: /tmp/muse_build_<board>.log. flash finds the board's port by its
 # USB device (tools/muse/ports.py); with several of a kind attached, pass the
 # one's USB serial number (the MAC on native USB) or its port. Flashing from a
@@ -23,7 +23,7 @@
 # flashes in build-muse-<profile>-bench/, so neither build's sdkconfig hides
 # the other's.
 set -uo pipefail
-cmd=${1:?build|flash}; board=${2:?s3|aipi|c6|watcher|sticks3|plus2}
+cmd=${1:?build|flash}; board=${2:?s3|aipi|c6|watcher|sticks3|plus2|cores3}
 root=$(cd "$(dirname "$0")/../.." && pwd)
 case $board in
     s3)      profile=waveshare-s3-175c;    target=esp32s3 ;;
@@ -35,6 +35,7 @@ case $board in
     sticks3) profile=m5stack-sticks3;      target=esp32s3 ;;
     # Its CH9102 USB-UART bridge drops out above 230400 baud.
     plus2)   profile=m5stack-stickc-plus2; target=esp32; baud=230400 ;;
+    cores3)  profile=m5stack-cores3;       target=esp32s3 ;;
     *) echo "unknown board $board"; exit 2 ;;
 esac
 baud=${baud:-460800}

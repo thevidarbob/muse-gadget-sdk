@@ -186,6 +186,28 @@ Supported scenario keys are:
 - `link`: `boot`, `unpaired`, `pairing`, `confirm`, `connecting`, `online`,
   `offline`, or `error`
 - `speaker`, `brightness`, and `advance` in milliseconds
+- `jam`: `play`, `beats`, `listen`, or `off`, to open Muse Jam on a page or
+  close it; then `jam_pattern` (0 to 4, which also starts it), `jam_preset`
+  (0 to 3), `jam_pad` (0 to 14, or `up`), `jam_play` and `jam_chord`
+- `tilt`: `X,Y` in g, what the `cores3` board's accelerometer reads
+- `touch`: `X,Y` in screen pixels puts a finger down there (or moves it), and
+  `up` lifts it; follow each with an `advance` so the UI reads it
+
+## Other boards and Muse Jam
+
+`--board cores3` previews the M5Stack CoreS3's 320 x 240 screen, with its
+wide face layout and Muse Jam's button (the music note). Muse Jam opens with
+a click on it, and the pads and the beat grid take the mouse. The simulator
+runs Jam's sound engine on its own clock and feeds what it plays back to the
+listener as the room, so LISTEN finds the tempo of its own beat. It has no
+audio output, but `--jam-wav FILE.wav` records everything the jam plays as a
+16 kHz mono WAV:
+
+```sh
+./esp32/simulator/build/muse_simulator --headless --board cores3 \
+  --scenario esp32/simulator/tests/scenarios/jam_listen.txt \
+  --run-ms 250 --screenshot jam.ppm --jam-wav jam.wav
+```
 
 Invalid options and scenario values return a nonzero exit status and identify
 the bad line.
