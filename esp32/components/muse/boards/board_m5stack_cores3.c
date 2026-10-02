@@ -15,7 +15,7 @@
  */
 
 /*
- * M5Stack CoreS3: ESP32-S3R8 (16 MB flash, 8 MB octal PSRAM), 2" 320x240
+ * M5Stack CoreS3: ESP32-S3 (16 MB flash, 8 MB quad PSRAM), 2" 320x240
  * ILI9342C IPS LCD on SPI with an FT6336U touch panel, AW88298 speaker amp
  * and ES7210 dual mic on one I2S bus, AXP2101 PMU, AW9523B GPIO expander and
  * a BMI270 IMU, all on one I2C bus. The only button Muse can use is the side

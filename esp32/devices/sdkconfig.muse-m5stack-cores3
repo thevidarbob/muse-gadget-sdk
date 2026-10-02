@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# M5Stack CoreS3: ESP32-S3R8 (16 MB flash, 8 MB octal PSRAM), 2" 320x240
+# M5Stack CoreS3: ESP32-S3 (16 MB flash, 8 MB quad PSRAM), 2" 320x240
 # touch LCD, native USB (USB Serial/JTAG, no bridge chip). Load last, after
 # sdkconfig.muse, which already sets 16 MB and partitions_muse.csv.
 CONFIG_IDF_TARGET="esp32s3"
@@ -21,7 +21,10 @@ CONFIG_MUSE_BOARD_M5STACK_CORES3=y
 CONFIG_MUSE_JAM=y
 
 CONFIG_SPIRAM=y
-CONFIG_SPIRAM_MODE_OCT=y
+# Quad, not octal: octal PSRAM would take GPIO 33..37, which carry the
+# LCD's SPI and DC and the I2S clocks here, and the PSRAM check at boot
+# fails, leaving the screen black.
+CONFIG_SPIRAM_MODE_QUAD=y
 CONFIG_SPIRAM_SPEED_80M=y
 CONFIG_SPIRAM_FETCH_INSTRUCTIONS=y
 CONFIG_SPIRAM_RODATA=y
