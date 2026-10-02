@@ -1,0 +1,8 @@
+# Muse Jam's beat machine playing its house pattern.
+face=idle
+wifi=connected
+paired=true
+jam=beats
+jam_pattern=0
+jam=beats
+advance=700

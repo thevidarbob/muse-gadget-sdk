@@ -43,6 +43,11 @@ esp_err_t muse_pmu_init(i2c_master_bus_handle_t bus, bool key_irqs);
  * in bit 8. Turns nothing on. */
 esp_err_t muse_pmu_keep_rails(uint8_t dcdc, uint16_t ldo);
 
+/* Raw register access, for board-specific rails (LDO voltages, a backlight
+ * on an LDO). Needs muse_pmu_init() first. */
+esp_err_t muse_pmu_read(uint8_t reg, uint8_t *val);
+esp_err_t muse_pmu_write(uint8_t reg, uint8_t val);
+
 /* Returns and clears latched MUSE_PMU_KEY_* events. */
 unsigned muse_pmu_poll_key(void);
 

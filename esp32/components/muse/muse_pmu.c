@@ -120,6 +120,16 @@ esp_err_t muse_pmu_keep_rails(uint8_t dcdc, uint16_t ldo)
     return ESP_OK;
 }
 
+esp_err_t muse_pmu_read(uint8_t reg, uint8_t *val)
+{
+    return s_dev ? rd(reg, val) : ESP_ERR_INVALID_STATE;
+}
+
+esp_err_t muse_pmu_write(uint8_t reg, uint8_t val)
+{
+    return s_dev ? wr(reg, val) : ESP_ERR_INVALID_STATE;
+}
+
 unsigned muse_pmu_poll_key(void)
 {
     uint8_t sts;

@@ -1,0 +1,7 @@
+# Muse Jam listening: the room is the boom bap pattern, long enough to find its tempo.
+face=idle
+wifi=connected
+paired=true
+jam=listen
+jam_pattern=1
+advance=9000

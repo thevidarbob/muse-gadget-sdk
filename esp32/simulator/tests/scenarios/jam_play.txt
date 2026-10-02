@@ -1,0 +1,12 @@
+# Muse Jam's pads: the neon synth, a chord held, the board tipped right.
+face=idle
+wifi=connected
+paired=true
+jam=play
+jam_preset=1
+jam_chord=true
+jam=play
+advance=100
+tilt=0.3,0.25
+jam_pad=7
+advance=400

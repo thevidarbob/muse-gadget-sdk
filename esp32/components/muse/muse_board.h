@@ -89,6 +89,9 @@ typedef struct {
     esp_err_t (*read_power)(muse_power_t *out);
     /* Turns the board off; returns only on failure. */
     esp_err_t (*power_off)(void);
+    /* Acceleration in g along the screen's axes: x to the right, y up the
+     * screen, z out of it. May be NULL: no accelerometer. */
+    esp_err_t (*read_accel)(float g[3]);
 } muse_board_t;
 
 /* The running board, set by muse_app_run(). */

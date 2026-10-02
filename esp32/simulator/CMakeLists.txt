@@ -151,7 +151,10 @@ add_executable(muse_simulator
     src/sim_board.c
     src/sim_platform.c
     src/sim_services.c
+    src/sim_jam.c
     "${MUSE_COMPONENT_DIR}/muse_ui.c"
+    "${MUSE_COMPONENT_DIR}/muse_jam_ui.c"
+    "${MUSE_COMPONENT_DIR}/muse_jam_synth.c"
     "${MUSE_COMPONENT_DIR}/muse_state.c"
     "${MUSE_COMPONENT_DIR}/muse_text.c"
     "${MUSE_COMPONENT_DIR}/../../avatar/muse_pixel.c"
